@@ -38,10 +38,9 @@
   .qr-row { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
   .qr-item { background: var(--cream); padding: 16px; border-radius: 20px; border: 1px solid rgba(201,169,110,0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
   .qr-img { display: block; width: 220px; height: 220px; max-width: 40vw; }
-  .gallery-grid { columns: 3; column-gap: 16px; }
-  @media (max-width: 700px) { .gallery-grid { columns: 2; } }
-  @media (max-width: 400px) { .gallery-grid { columns: 1; } }
-  .photo-item { break-inside: avoid; margin-bottom: 16px; border-radius: 12px; overflow: hidden; position: relative; }
+  .gallery-grid { display: flex; gap: 16px; align-items: flex-start; }
+  .gallery-col { display: flex; flex-direction: column; gap: 16px; flex: 1; min-width: 0; }
+  .photo-item { border-radius: 12px; overflow: hidden; position: relative; }
   .photo-item img { width: 100%; display: block; transition: transform 0.3s ease; filter: sepia(0.1) contrast(1.02); }
   .photo-item:hover img { transform: scale(1.02); }
   .stats-row { display: flex; justify-content: center; gap: 3rem; padding: 2rem 0; border-top: 1px solid rgba(201,169,110,0.1); border-bottom: 1px solid rgba(201,169,110,0.1); margin: 2rem auto; max-width: 600px; }
@@ -516,6 +515,13 @@
       ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[m]));
   }
 
+  function columnCount() {
+    const w = window.innerWidth;
+    if (w <= 400) return 1;
+    if (w <= 700) return 2;
+    return 3;
+  }
+
   function render() {
     const show = photos;
     const grid = document.getElementById('gallery-grid');
@@ -528,11 +534,21 @@
     document.getElementById('footer-section').style.display   = photos.length > 0 ? 'block' : 'none';
     document.getElementById('stat-total').innerText = photos.length;
 
-    show.forEach(p => {
+    // Distribuie pozele in coloane fixe (round-robin). Pozitia fiecarei poze
+    // e stabilita o singura data, deci nu se mai rearanjeaza la scroll.
+    const cols = columnCount();
+    const colEls = [];
+    for (let i = 0; i < cols; i++) {
+      const c = document.createElement('div');
+      c.className = 'gallery-col';
+      grid.appendChild(c);
+      colEls.push(c);
+    }
+    show.forEach((p, i) => {
       const div = document.createElement('div');
       div.className = 'photo-item';
       div.innerHTML = `<img src="${escapeHtml(p.src)}" alt="amintire" loading="lazy">`;
-      grid.appendChild(div);
+      colEls[i % cols].appendChild(div);
     });
     renderFilmstrip();
   }
@@ -580,6 +596,17 @@
     }
 
     loadFromList();
+
+    // Re-randeaza la resize doar daca se schimba numarul de coloane.
+    let lastCols = columnCount();
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const c = columnCount();
+        if (c !== lastCols) { lastCols = c; render(); }
+      }, 200);
+    });
   });
 </script>
 </body>
