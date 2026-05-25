@@ -34,10 +34,6 @@
   .upload-area:hover { border-color: var(--gold); background: rgba(201, 169, 110, 0.07); }
   .upload-icon { width: 56px; height: 56px; border-radius: 50%; background: rgba(201, 169, 110, 0.1); border: 1px solid rgba(201, 169, 110, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 22px; }
   #file-input { display: none; }
-  .controls-row { display: flex; gap: 12px; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; }
-  .year-pill { padding: 8px 20px; border-radius: 40px; border: 1px solid rgba(201,169,110,0.3); background: transparent; color: rgba(249,244,236,0.6); font-size: 13px; cursor: pointer; transition: all 0.2s; }
-  .year-pill.active, .year-pill:hover { border-color: var(--gold); color: var(--gold-light); }
-  .year-pill.active { background: var(--gold); color: var(--dark); font-weight: 500; }
   .gallery-section { padding: 2rem; max-width: 1100px; margin: 0 auto; }
   .gallery-grid { columns: 3; column-gap: 16px; }
   @media (max-width: 700px) { .gallery-grid { columns: 2; } }
@@ -114,14 +110,7 @@
     <input type="file" id="file-input" accept="image/*" multiple>
   </div>
 
-  <div class="controls-row" id="filter-row" style="display:none;">
-    <span style="font-size:13px; color:var(--warm);">Filtrează:</span>
-    <button class="year-pill active" data-year="toate" onclick="filterYear('toate')">Toate</button>
-    <button class="year-pill" data-year="9" onclick="filterYear('9')">Clasa a 9-a</button>
-    <button class="year-pill" data-year="10" onclick="filterYear('10')">Clasa a 10-a</button>
-    <button class="year-pill" data-year="11" onclick="filterYear('11')">Clasa a 11-a</button>
-    <button class="year-pill" data-year="12" onclick="filterYear('12')">Clasa a 12-a</button>
-  </div>
+
 </section>
 
 <div class="stats-row" id="stats-row" style="display:none;">
@@ -508,7 +497,6 @@
   ];
 
   let photos = [];
-  let currentFilter = 'toate';
   let blobUrls = [];
   let editingId = null;
   const DEFAULT_YEAR = '12';
@@ -575,14 +563,6 @@
     });
   }
 
-  // ---------- FILTRU PE ANI ----------
-  function filterYear(y) {
-    currentFilter = y;
-    document.querySelectorAll('.year-pill').forEach(p =>
-      p.classList.toggle('active', p.dataset.year === y));
-    render();
-  }
-
   // ---------- RANDARE ----------
   function escapeHtml(s) {
     return String(s).replace(/[&<>"]/g, m =>
@@ -590,15 +570,12 @@
   }
 
   function render() {
-    const show = currentFilter === 'toate'
-      ? photos
-      : photos.filter(p => p.year === currentFilter);
+    const show = photos;
     const grid = document.getElementById('gallery-grid');
     const emptyState = document.getElementById('empty-state');
 
     grid.innerHTML = '';
     emptyState.style.display = show.length === 0 ? 'block' : 'none';
-    document.getElementById('filter-row').style.display       = photos.length > 0 ? 'flex'  : 'none';
     document.getElementById('stats-row').style.display        = photos.length > 0 ? 'flex'  : 'none';
     document.getElementById('filmstrip-section').style.display = photos.length >= 4 ? 'block' : 'none';
     document.getElementById('footer-section').style.display   = photos.length > 0 ? 'block' : 'none';
