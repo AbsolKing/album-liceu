@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amintiri de Liceu – Album media</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --gold: #c9a96e; --gold-light: #e8d5b0; --cream: #f9f4ec; --dark: #1a1410; --warm: #8b6f47; --accent: #d4826a; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--dark); color: var(--cream); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9999; opacity: 0.4; }
+  .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 4rem 2rem; background: radial-gradient(ellipse 80% 60% at 50% 40%, #2e1f0e 0%, var(--dark) 70%); position: relative; }
+  .hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 120px; background: linear-gradient(to bottom, transparent, var(--dark)); pointer-events: none; }
+  .year-badge { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); border: 1px solid var(--gold); padding: 6px 20px; border-radius: 40px; margin-bottom: 2.5rem; opacity: 0; animation: fadeUp 0.8s 0.2s forwards; }
+  .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 8vw, 6.5rem); font-weight: 400; line-height: 1.05; opacity: 0; animation: fadeUp 0.9s 0.4s forwards; }
+  .hero h1 em { color: var(--gold); font-style: italic; }
+  .hero-sub { font-size: 16px; font-weight: 300; color: var(--gold-light); margin-top: 1.5rem; opacity: 0; animation: fadeUp 0.9s 0.6s forwards; }
+  .scroll-hint { position: absolute; bottom: 2.5rem; display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--warm); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0; animation: fadeUp 1s 1.2s forwards; }
+  .scroll-hint .line { width: 1px; height: 40px; background: linear-gradient(to bottom, var(--warm), transparent); animation: pulse 2s infinite; }
+  .upload-section { padding: 3rem 2rem 2rem; max-width: 1000px; margin: 0 auto; }
+  .section-label { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+  .section-title { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 400; margin-bottom: 2rem; }
+  .folder-loader { background: rgba(201, 169, 110, 0.08); border: 1px solid rgba(201, 169, 110, 0.3); border-radius: 20px; padding: 2rem; margin-bottom: 2rem; text-align: center; transition: all 0.2s; }
+  .folder-loader.loading { border-color: var(--gold); background: rgba(201,169,110,0.15); }
+  .btn-folder { background: var(--gold); border: none; padding: 12px 32px; border-radius: 40px; font-weight: 500; color: var(--dark); font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; }
+  .btn-folder:hover { opacity: 0.85; transform: scale(0.98); background: #dbb47a; }
+  .folder-hint { font-size: 13px; color: var(--warm); margin-top: 12px; }
+  .status-msg { margin-top: 16px; font-size: 13px; background: rgba(201,169,110,0.2); padding: 8px; border-radius: 40px; color: var(--gold-light); }
+  .status-msg.error { background: rgba(212,130,106,0.2); color: #e6a28c; }
+  .status-msg.success { background: rgba(201,169,110,0.25); color: var(--gold-light); }
+  .separator { text-align: center; margin: 1.5rem 0; font-size: 12px; color: rgba(201,169,110,0.5); letter-spacing: 2px; }
+  .upload-area { border: 1px dashed rgba(201, 169, 110, 0.4); border-radius: 16px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(201, 169, 110, 0.03); }
+  .upload-area:hover { border-color: var(--gold); background: rgba(201, 169, 110, 0.07); }
+  .upload-icon { width: 56px; height: 56px; border-radius: 50%; background: rgba(201, 169, 110, 0.1); border: 1px solid rgba(201, 169, 110, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 22px; }
+  #file-input { display: none; }
+  .controls-row { display: flex; gap: 12px; margin-bottom: 2rem; flex-wrap: wrap; align-items: center; }
+  .year-pill { padding: 8px 20px; border-radius: 40px; border: 1px solid rgba(201,169,110,0.3); background: transparent; color: rgba(249,244,236,0.6); font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .year-pill.active, .year-pill:hover { border-color: var(--gold); color: var(--gold-light); }
+  .year-pill.active { background: var(--gold); color: var(--dark); font-weight: 500; }
+  .gallery-section { padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  .gallery-grid { columns: 3; column-gap: 16px; }
+  @media (max-width: 700px) { .gallery-grid { columns: 2; } }
+  @media (max-width: 400px) { .gallery-grid { columns: 1; } }
+  .photo-item { break-inside: avoid; margin-bottom: 16px; border-radius: 12px; overflow: hidden; position: relative; }
+  .photo-item img { width: 100%; display: block; transition: transform 0.3s ease; filter: sepia(0.1) contrast(1.02); }
+  .photo-item:hover img { transform: scale(1.02); }
+  .photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,10,5,0.85) 0%, transparent 50%); opacity: 0; transition: opacity 0.2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; }
+  .photo-item:hover .photo-overlay { opacity: 1; }
+  .photo-caption-display { font-size: 13px; color: var(--cream); font-style: italic; font-family: 'Playfair Display', serif; margin-bottom: 6px; }
+  .photo-year-tag { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+  .photo-actions { display: flex; gap: 6px; position: absolute; top: 10px; right: 10px; opacity: 0; }
+  .photo-item:hover .photo-actions { opacity: 1; }
+  .action-btn { width: 30px; height: 30px; border-radius: 50%; background: rgba(15,10,5,0.7); border: 1px solid rgba(201,169,110,0.4); color: var(--cream); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+  .action-btn:hover { background: var(--accent); }
+  .stats-row { display: flex; justify-content: center; gap: 3rem; padding: 2rem 0; border-top: 1px solid rgba(201,169,110,0.1); border-bottom: 1px solid rgba(201,169,110,0.1); margin: 2rem auto; max-width: 600px; }
+  .stat { text-align: center; }
+  .stat-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: var(--gold); display: block; line-height: 1; }
+  .stat-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--warm); margin-top: 6px; }
+  .filmstrip { padding: 3rem 0; overflow: hidden; position: relative; }
+  .filmstrip::before, .filmstrip::after { content: ''; position: absolute; top: 0; bottom: 0; width: 80px; z-index: 2; pointer-events: none; }
+  .filmstrip::before { left: 0; background: linear-gradient(to right, var(--dark), transparent); }
+  .filmstrip::after { right: 0; background: linear-gradient(to left, var(--dark), transparent); }
+  .filmstrip-track { display: flex; gap: 16px; animation: scroll-left 30s linear infinite; width: max-content; }
+  .filmstrip:hover .filmstrip-track { animation-play-state: paused; }
+  .film-thumb { width: 120px; height: 90px; border-radius: 6px; object-fit: cover; flex-shrink: 0; filter: sepia(0.2); border: 1px solid rgba(201,169,110,0.2); }
+  .empty-gallery { text-align: center; padding: 4rem 2rem; opacity: 0.6; background: rgba(0,0,0,0.2); border-radius: 32px; }
+  .footer { text-align: center; padding: 3rem 2rem; border-top: 1px solid rgba(201,169,110,0.1); color: var(--warm); }
+  .export-row { display: flex; gap: 12px; justify-content: center; margin-top: 1.5rem; }
+  .btn-print, .btn-share { padding: 8px 24px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: 0.2s; }
+  .btn-print { background: var(--gold); border: none; color: var(--dark); font-weight: 500; }
+  .btn-share { background: transparent; border: 1px solid rgba(201,169,110,0.4); color: var(--gold-light); }
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(10,7,4,0.9); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+  .modal-bg.open { display: flex; }
+  .modal { background: #1e160f; border: 1px solid rgba(201,169,110,0.3); border-radius: 24px; padding: 2rem; max-width: 480px; width: 90%; }
+  .modal h3 { font-family: 'Playfair Display', serif; color: var(--cream); margin-bottom: 0.5rem; }
+  .modal-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; }
+  .modal input, .modal select { width: 100%; background: rgba(249,244,236,0.05); border: 1px solid rgba(201,169,110,0.3); border-radius: 12px; padding: 10px 14px; color: var(--cream); margin-bottom: 12px; font-family: inherit; }
+  .modal-btns { display: flex; gap: 12px; margin-top: 1rem; }
+  .btn-save { flex:1; background: var(--gold); border: none; border-radius: 30px; padding: 10px; font-weight: 500; color: var(--dark); cursor: pointer; }
+  .btn-cancel { background: transparent; border: 1px solid var(--warm); border-radius: 30px; padding: 10px 20px; color: var(--warm); cursor: pointer; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
+  @keyframes scroll-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .auto-badge { background: rgba(201,169,110,0.15); border-radius: 20px; padding: 6px 12px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(201,169,110,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 6px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="year-badge">2021 — 2026</div>
+  <h1>Patru ani,<br>o <em>viață</em> întreagă</h1>
+  <p class="hero-sub">Amintirile care nu se uită niciodată</p>
+  <div class="scroll-hint"><span>Album automat / media/</span><div class="line"></div></div>
+</section>
+
+<section class="upload-section">
+  <p class="section-label">Povestea ta în imagini</p>
+  <h2 class="section-title">Albumul din arhivă</h2>
+
+  <div class="folder-loader" id="autoLoader">
+    <div class="auto-badge">📀 ÎNCĂRCARE AUTOMATĂ DIN media/</div>
+    <p class="folder-hint" id="autoHint">Toate pozele din folderul <strong style="color:var(--gold)">media/</strong> se încarcă automat.</p>
+    <div id="loadStatus" class="status-msg" style="display:none;"></div>
+  </div>
+  
+  <div class="separator">—— sau adaugă poze individual ——</div>
+
+  <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div class="upload-icon">📷</div>
+    <p><strong>Apasă sau trage poze individuale</strong><br>JPG, PNG — completează legenda mai târziu</p>
+    <input type="file" id="file-input" accept="image/*" multiple>
+  </div>
+
+  <div class="controls-row" id="filter-row" style="display:none;">
+    <span style="font-size:13px; color:var(--warm);">Filtrează:</span>
+    <button class="year-pill active" data-year="toate" onclick="filterYear('toate')">Toate</button>
+    <button class="year-pill" data-year="9" onclick="filterYear('9')">Clasa a 9-a</button>
+    <button class="year-pill" data-year="10" onclick="filterYear('10')">Clasa a 10-a</button>
+    <button class="year-pill" data-year="11" onclick="filterYear('11')">Clasa a 11-a</button>
+    <button class="year-pill" data-year="12" onclick="filterYear('12')">Clasa a 12-a</button>
+  </div>
+</section>
+
+<div class="stats-row" id="stats-row" style="display:none;">
+  <div class="stat"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Amintiri</span></div>
+  <div class="stat"><span class="stat-num">4</span><span class="stat-label">Ani</span></div>
+  <div class="stat"><span class="stat-num" id="stat-captions">∞</span><span class="stat-label">Povești</span></div>
+</div>
+
+<section class="gallery-section">
+  <div class="gallery-grid" id="gallery-grid"></div>
+  <div class="empty-gallery" id="empty-state"><p>📸 Așteaptă amintirile tale — se încarcă automat folderul media/ din repository sau adaugă imagini.</p></div>
+</section>
+
+<section class="filmstrip" id="filmstrip-section" style="display:none;">
+  <div class="filmstrip-track" id="filmstrip-track"></div>
+</section>
+
+<footer class="footer" id="footer-section" style="display:none;">
+  <strong>Sfârșitul unui capitol, începutul tuturor celorlalte.</strong>
+  <p style="margin-top:0.5rem; font-size:12px;">Felicitări, absolvent!</p>
+  <div class="export-row">
+    <button class="btn-print" onclick="printMemories()">🖨 Printează / PDF</button>
+    <button class="btn-share" onclick="copyAll()">📋 Copiază link</button>
+  </div>
+</footer>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3>Editează amintirea</h3>
+    <img id="modal-img" class="modal-img">
+    <input type="text" id="modal-caption" placeholder="Legendă (ex: Festivitate de absolvire)">
+    <select id="modal-year">
+      <option value="9">Clasa a 9-a</option><option value="10">Clasa a 10-a</option>
+      <option value="11">Clasa a 11-a</option><option value="12" selected>Clasa a 12-a</option>
+    </select>
+    <div class="modal-btns"><button class="btn-save" onclick="saveCaption()">Salvează</button><button class="btn-cancel" onclick="closeModal()">Anulează</button></div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //  Album media — lista pozelor e INCLUSA direct aici jos.
+  //  Nu mai e nevoie de manifest.json, scripturi sau GitHub Actions.
+  //  Ca sa adaugi poze noi: pune-le in media/ si adauga o linie
+  //  in lista PHOTO_FILES de mai jos (ex: "media/numefisier.jpg",).
+  // ============================================================
+
+  const PHOTO_FILES = [
+    "media/006df0365d984c109dbd73462e6654c0.jpeg",
+    "media/02312586a9324cdc8c46a398402c290b.JPG",
+    "media/025abbb56ce741088d5736c2e5e8c8a5.jpeg",
+    "media/03e84625ebcd4fc79a9e971149bbf287.jpeg",
+    "media/04362d81806446f4807bddf8bf9759df.jpeg",
+    "media/04a5dcf58d444bf8a3401a963494ee0d.jpeg",
+    "media/062032c45fed493289f88542ea77f86f.jpeg",
+    "media/063ba58e83bc4ffd9d0e0256fe8cd4a2.jpeg",
+    "media/07b1f10479f448bc977751951ab6e330.jpeg",
+    "media/07bd2c174f164aabb133ff16b8d74582.jpeg",
+    "media/07ed965062fd40549ef9f824db2ed38f.jpeg",
+    "media/08b4c9da6c3e406aa82b93620367f794.jpeg",
+    "media/0bd2ce17acb54d30957326b6fa8291a8.jpeg",
+    "media/0c6bca6d89fe4c71a6b2ac7b1882347a.jpeg",
+    "media/0c82435b6aa641cdab1238958bde101e.jpeg",
+    "media/0cbcd0a6f1114a80813052c712b20fe5.jpeg",
+    "media/0cee7365426d4d319cd86b4a73a76881.jpeg",
+    "media/0d8de71bcc71428d92f33b172d7087c6.jpeg",
+    "media/0ec683a2cc1740e79c42cd28bade8ded.jpeg",
+    "media/0f895ba94c744154af72e78b04c1e023.jpeg",
+    "media/10d35a535ed14c0396aa539b78f4413e.jpeg",
+    "media/120082a227f3418fb00c7282f4fb57f6.jpeg",
+    "media/12d2a267a8224290a7c60958820f7b25.JPG",
+    "media/142e2afac5f747a5aa7a5ef6b98fcf2f.jpeg",
+    "media/145faf44d73a400ca5ef690c8dcc1665.jpeg",
+    "media/1521d23d374b47b984a37f46c1240326.jpeg",
+    "media/15308020e3ae4f20a832a28979ee7ecb.jpeg",
+    "media/1627117268ed49e6b1ff2a2e609b2c48.jpeg",
+    "media/167307ab927f4db09e6c43ae897005de.jpeg",
+    "media/168bcd9fd42f4be894366c18927b6328.jpeg",
+    "media/17f9c27554904c349c76b373bc045840.JPG",
+    "media/18683631a92f4eab80af017dc83a6fd3.jpeg",
+    "media/199766fdc5d5456db82334e85e714ec3.jpeg",
+    "media/1ac8147ae3ea4cd7aa6f14a32ed77125.jpeg",
+    "media/1b4bc916c78b4c8381ffe5e92aa05f73.jpeg",
+    "media/1b795d4349264f3d8be9f353fff6dd1e.jpeg",
+    "media/1bc5b191df8e44f4acb4a6f9aecaa4ee.jpeg",
+    "media/1bca51ee8f3740f8874a2a291ffe0610.jpeg",
+    "media/1c5c8232c33a47fd9a06144b94864d79.jpeg",
+    "media/1cec31337ef740bca77028c4f3023aa2.jpeg",
+    "media/1d3ad66ae61a480ebdef3064f36f55b0.jpeg",
+    "media/1d82be2832b045d6b81568295fc31015.jpeg",
+    "media/1e7f3604b25742f5b7627f372fc5c39d.jpeg",
+    "media/1ef370e575d043db8671255793ea306a.jpeg",
+    "media/1f2bf9be2464461c9c64f5de87afbb2e.jpeg",
+    "media/1f3576868f66407e9876bc29ecb172b1.jpeg",
+    "media/1f6cb10f56364b31b37274a6bcde7ed5.jpg",
+    "media/1ffb9b8e7f194dbd8c5e0a1128504571.jpeg",
+    "media/207cffa279b8457f95354ab015f11d90.jpeg",
+    "media/21e4b3aed2564c7bb7d9fb431c3d2ce3.jpeg",
+    "media/22587ac5442f468a8cb471ca14be77dc.jpeg",
+    "media/23ad7797aec24d6c844de49b418f50b8.jpeg",
+    "media/25889dcc3e674d92b46aba032844f4dd.jpeg",
+    "media/280043f4bd58469b9bda9fb22f7528cb.jpeg",
+    "media/29187aee2ce84397be720a334626c155.jpg",
+    "media/29b4b512d149477fbe0704b83c3418c5.jpeg",
+    "media/2bfe41ec6d5148baab2b98ea4d6b074f.jpeg",
+    "media/2d55cfd734f545e485708d4200050692.jpeg",
+    "media/2eb22def8ccc4af0a01731e6e1f4de79.jpeg",
+    "media/2f4eb8f5f2394bde844a5922322a21f4.jpeg",
+    "media/2f73db1dbdba4cf38f6c9f73ae09ecf5.jpeg",
+    "media/2fa489d7bb1f44e396f6bdafa4fe02c7.jpeg",
+    "media/2ff88e5f641f40d3b2d55c6c149ae4df.jpeg",
+    "media/31d2409d9d14407982dfa415d5b6d6f9.jpg",
+    "media/31e6792c07584a2292941741e31c32d3.jpeg",
+    "media/33e94cf34b5a4049b4292749f4de29b7.jpeg",
+    "media/352eaebe81d14fddac460e296b5184f1.jpeg",
+    "media/354e4b71b56642e095f9b87207e08951.jpeg",
+    "media/35831681cc5942c2b668f6f1806a4316.jpeg",
+    "media/35c7f6f28fb24e079c171411a5664d79.jpeg",
+    "media/3611c314c3124253878f72ed2125444e.jpeg",
+    "media/3629236385aa4d5885dc15efeccdcda2.jpeg",
+    "media/377a2c4223d24494bf08e3538f29ad68.jpeg",
+    "media/395871749a3847f2b8eaf85d0067b2f4.jpeg",
+    "media/3a523ea533374fc09d0a6f97110be437.jpeg",
+    "media/3c41d7cf24c04df3b3e00584a78a30ef.jpeg",
+    "media/3da130f53e4e4e93ba2cc06d5bb85107.jpeg",
+    "media/3e67fb7d94a8486a8fb6fa18dd6b7488.jpeg",
+    "media/3e83e39f9b824f5a8831b1f289d0b6d2.jpeg",
+    "media/3f0210a843724c59843d2900aaaeb1f1.jpeg",
+    "media/402423a4eca54304b5f1ab8c078b83a2.png",
+    "media/404373c1a99f481b9cddf548628f1ede.jpeg",
+    "media/418dd9b0271d495591d44066f75c8ab5.jpeg",
+    "media/427d27baaf9d44b090d81b96b9ec4a58.jpeg",
+    "media/42849dd49bee4bf1a8643d07d68372f5.jpeg",
+    "media/42af622045e248949d163d5a6fc932f6.PNG",
+    "media/43985d78b7ee4938b81aa9ccc760e19b.jpeg",
+    "media/451b9cb2b63f40b3b0dad5c2ae178455.jpeg",
+    "media/45d5c27dd2e5401b8f3e39a908c5eaaf.jpeg",
+    "media/48c77eeac52f449d8270e638e8b26704.jpeg",
+    "media/4901faee291b4d99812ffd19e6f9775b.jpeg",
+    "media/49529039e970422db458cc3153625c33.jpeg",
+    "media/49d5842e14944d518d758f8451a45492.jpeg",
+    "media/49f5d3e57a724f74b06c1bac3ae5cace.jpeg",
+    "media/4a398a8ef304473fb5b2d87eb65d33db.jpeg",
+    "media/4a3e272769454e66b5a067fbd1e20720.jpeg",
+    "media/4bb9bf90d83c4522ba6b19bee0ecc2be.jpeg",
+    "media/4d9d88bcfa99433aac8fa0a9f761fe04.jpeg",
+    "media/4dacca1a854e4de8a56f89b1daeb0319.jpeg",
+    "media/4ea2d75fc7a44383beefa30dc20d5b3b.jpeg",
+    "media/4f291c084bde4b1b9e95e0ec85f93859.jpeg",
+    "media/4f61bb97539146bbb5a06178f484b6bf.jpeg",
+    "media/509856dbbf3540498f7cde401e29e861.jpeg",
+    "media/50a670efccd94da7a80c03de3ab7b67f.jpeg",
+    "media/50c2ab6b4db043c98a9950ca7c1aa581.jpeg",
+    "media/51730e7895ad436787889fe132687211.jpeg",
+    "media/519b46b85bb748a9bf5d5571c8a6314c.jpeg",
+    "media/520dbb8bd23149ea99e1b84cef1dcd57.png",
+    "media/52bf0dd69f76472da629452a67ebf905.jpeg",
+    "media/5446d46ee49044249e06f40f9c11d8bc.jpeg",
+    "media/54ccfabecdb041f9a5f901482eb84445.jpeg",
+    "media/55c2b8d000fa4a9fbd6e9b14aead1978.jpeg",
+    "media/5603dfdf8e164f34aeb9bfc2d4297899.jpeg",
+    "media/562abdc99e8846ad9e336005d30b7242.jpeg",
+    "media/56702c2154e84ad8809bf95ab1236d3b.jpeg",
+    "media/57aa347e5ff247f79c255d4b4e4b0c4f.jpeg",
+    "media/57ac399cf85b48cf943fe69aba373c7b.jpeg",
+    "media/590731971f294230a67743b8c9ae4772.jpeg",
+    "media/597d07df1a434204b8c4e2b111134f5d.jpeg",
+    "media/5b1a3eac3615425aa04e3a7e108fd65e.jpeg",
+    "media/5cad44f5068a407ea9cb0ea2e39a38da.jpeg",
+    "media/5dc6b91afbd84fbb8fa207497e3e9912.jpeg",
+    "media/5ec1663c3f37414498e9bb72b86f5a46.jpeg",
+    "media/5fa958f3234f4ee9b1fe1418187a5694.jpeg",
+    "media/5fc404658f804476999b930871365ab4.jpeg",
+    "media/5fe3faefaf514dc5aa1615f161def6a3.jpeg",
+    "media/614a4b6814eb4d5ba7f819e933aa7011.jpeg",
+    "media/6269e7fde81e4955ad4f4948e5dba2f6.jpeg",
+    "media/62dff38ab3e44bc0883da6abb4cc3a78.jpeg",
+    "media/63620b81ab9b451dbcb63793eb4bce50.jpeg",
+    "media/642cc8909a5942a0827c87ebe2ad27a3.jpeg",
+    "media/649da4bdf467438599f6e9fcb3ba8876.jpeg",
+    "media/6501b046bca841a0ac544f09eb5ddc0e.jpeg",
+    "media/653c3d1d8bb24e33aed39de20b5b0fbe.jpeg",
+    "media/6620260c1e364b0c82afc2f25764be38.JPG",
+    "media/6686d3cb62074e05bde809e100b570ec.jpeg",
+    "media/669a9ec33bb44c279bc419bba1a25f24.jpeg",
+    "media/66d8d8fa21b8442f889c562b140d6454.jpeg",
+    "media/67f4c614c3254c02a56f8bc54dc1bc2e.jpeg",
+    "media/686725258ec44b4bb54ccea001e091b6.jpeg",
+    "media/6ae9999faaf4487aad1133bc2c313d3e.jpeg",
+    "media/6cfcae34df504262ae7a444f59529d70.jpeg",
+    "media/6e71df624d89477c913a224bf6666295.jpg",
+    "media/6e82c96fa3644fdd8af4587f779c1f44.jpeg",
+    "media/7079906b85504542bfffa425f1435097.jpeg",
+    "media/71ae11e003d44c1283ca269c18ae9a2e.jpeg",
+    "media/73197ac3d6a5450a9faf26b59abfaa92.jpeg",
+    "media/77ab8ad30c8b4989b4286ab16e115dd9.jpeg",
+    "media/77e47fb8422c45de83c4d70bc6601abd.jpeg",
+    "media/78387870129d420ca5553657aba3bdee.PNG",
+    "media/785cf7aa1579417c86047d8c00c00918.jpeg",
+    "media/78c9312b5e494252bc45f65afd608642.jpeg",
+    "media/7bac009b8eed49fa9a57f0e83b2d39ef.jpeg",
+    "media/7bd4eef4c73140dc87877c6a74f1ceef.jpeg",
+    "media/7c220a9011874080871d3258239707db.jpeg",
+    "media/7d59467bf699405e98ba6ae3bb06d80d.jpeg",
+    "media/7eef9e31a66d46a3be3d709484072bf5.jpeg",
+    "media/8138dc4644d64878957658f101a07dca.jpg",
+    "media/81ab9aee54794b12b4633d447d87f3ec.jpeg",
+    "media/85722441cc4a42d39fd117e60179eda5.jpeg",
+    "media/8604d4cce1074ecd8e875a553ea6a27c.jpeg",
+    "media/861894f23fc14d13b133b96364a6e1cf.jpeg",
+    "media/866c2cbefece494fb9a32d29255dc96c.jpeg",
+    "media/87844bfc74f74100a645e3cb9a6333e2.jpeg",
+    "media/87c458e262b0459882cd2c79a6962469.jpeg",
+    "media/87d12dd1766047b7b9f7f42c6aaf8446.PNG",
+    "media/8932938fc7ef4999a080c4636e192e08.jpeg",
+    "media/893a2c8297974015958ab4cf7855f857.jpg",
+    "media/89cc072a07fe42499f2326c6c3b3f5dc.jpeg",
+    "media/8a078e81777447babe70386690f1bc70.jpeg",
+    "media/8a221dc445434d29898ce655b83689cd.jpeg",
+    "media/8a72b267811d44178f4fc0b2f593eef9.jpg",
+    "media/8aaf7389910c4a9b87e08dc7204e038f.jpeg",
+    "media/8b13be18be2d425ab7ec216d2f4b83c9.jpeg",
+    "media/8b32e938a55f4d79b34a6057e7008198.jpeg",
+    "media/8bb8b8e6ab3048b88284ef469af43a58.jpeg",
+    "media/8bc2a77c5ac3480a91300145292ba4d1.jpeg",
+    "media/8c69a7c8c5804677b7121b071161e665.jpeg",
+    "media/8cabfeaf6cef4793bf989af93834cf2e.jpeg",
+    "media/8d53784f263f471b925bc983f3f8a5b1.jpeg",
+    "media/8d5f15157ccd4fdfa5db20fcfa7d43cf.jpeg",
+    "media/8d9e245f16f74d2eb4409cf794ea8188.jpeg",
+    "media/8e88504a406f4feaa58d15897653dab3.JPG",
+    "media/8f1ead9e18784e9bad1093c27bc2584e.jpeg",
+    "media/8f316b7010b848db8d214d69c50366af.jpeg",
+    "media/929a5fdbf7754aed9ed59097d352d8f0.jpeg",
+    "media/940eaec05dd340e19b75b89b7dc7f328.jpeg",
+    "media/943029358cd14dc48125db4e09daca45.jpeg",
+    "media/960edc86fa6e4fadbf7496a3312140cb.jpeg",
+    "media/96a708ed3be0491c9643e64b5b54d751.jpeg",
+    "media/96f097048f68410f8d94a4a178840ec6.JPG",
+    "media/9766f2e808984131b0c19caaa3b1db9a.jpeg",
+    "media/97834e6f008d4dd981d2b8d0081e2bc1.jpeg",
+    "media/98c53ee48a4e42a49fe0755d6c63d01c.jpeg",
+    "media/99417ef9cada4f8d95873aa613e82513.jpeg",
+    "media/995694faa29f45888990bba4b9c70298.jpeg",
+    "media/99609440e7c84eafb5606e8853ca7b60.jpeg",
+    "media/9a5e14b9a0a041debce99250cfb1e4e1.jpeg",
+    "media/9afcfd65a2dc49deb9cce031e620db8e.jpeg",
+    "media/9b7786b1f6e2474e9da6ba53a90687c6.jpeg",
+    "media/9d663316cf2a445e85b4c7e04ffdfff6.jpeg",
+    "media/9d7a330e11ea4d16b3183573f3187c1f.jpg",
+    "media/9dc681286bdc40e387d5e4d218b95a3e.jpeg",
+    "media/9ef29651d4ec4de5afb635642c9984f8.jpeg",
+    "media/9f04fcbc017a4402b9cc4c4849b92ae4.jpeg",
+    "media/9f7d8ed30ea143aaa2c1ce0f154c4364.JPG",
+    "media/a012668169de4841ababc135d454c782.jpeg",
+    "media/a033567d8f99459089ce3c5e97b311a1.jpeg",
+    "media/a04c723db8654143a4ed5a3fca807884.jpg",
+    "media/a16394e33ca04be281f80c4ecf425e06.jpeg",
+    "media/a1c22957ffdf402798f41bc5e7d43750.jpeg",
+    "media/a207d8e80b9947e58acdbbd2104ccbc9.jpeg",
+    "media/a2b748dd6545457485d574d43fed0963.jpeg",
+    "media/a3a873852a0c4bb6931c86fbc9627c8b.jpg",
+    "media/a481e595f6bf487bba3285ed31631958.jpeg",
+    "media/a636d406a91545ebb6a58a830dbe36a8.jpeg",
+    "media/a7cfde8e65584c3387d0d65506691881.jpeg",
+    "media/a86347f941ad447fb5a88903ad577609.jpeg",
+    "media/a8ef01a813524dde8b51e804ab6bf04a.jpeg",
+    "media/a9addf6ec40b4a97951579ca5d5f0cda.jpeg",
+    "media/a9f7b3c502bc4c8abcb08a469b26521a.jpeg",
+    "media/aa3dde6852eb449a9ce12b6dacbc1364.jpeg",
+    "media/ab690ab651da41879865d2788526accf.jpeg",
+    "media/abd87d06a8cb4cdcaff43cfa99118800.jpeg",
+    "media/ac0377948dae47149c586b27f1380be5.jpeg",
+    "media/af94e8376fb145bb9f6ef0ceb2f06ef3.jpeg",
+    "media/b077ea3bbd12404fa5dacceb820e8bd0.jpeg",
+    "media/b0b40f41c3bb4693bbab5e90da1b56fb.jpeg",
+    "media/b245296fa75a423d86cd910e4594eb9b.jpeg",
+    "media/b33c13847865492e92f7bf7546400d21.jpeg",
+    "media/b42de896779c4612978147d7d57fc856.jpeg",
+    "media/b4ce156e9f6a4296a2339ca7986fe279.jpeg",
+    "media/b690c11e198a4ee78c79243c5ceecab8.jpeg",
+    "media/b6a8a58623dd4abca97bb076efec4df0.jpg",
+    "media/b8442377796945a7a726859a0fd81ac0.jpeg",
+    "media/b937f8d48ff546769883ee1341433ac5.jpeg",
+    "media/b99d6e463bbb46d396405ddd9500da38.jpeg",
+    "media/baf0ca8a2f414eb1b4183e766d353245.jpeg",
+    "media/bafda28585d44eaba76933ca5c46a92d.jpeg",
+    "media/bb6db5500385414ab5f589889851e568.jpeg",
+    "media/bbdcd67aa0244c27b78980d08d17cb6a.jpeg",
+    "media/bc1dc764153641269f138526e63be609.jpeg",
+    "media/bc358c5f6f9149cd81a9ad7778bc1560.jpeg",
+    "media/bc7141d6540c41e1b59ac57fbe7b69db.jpeg",
+    "media/bd9a6db6ee7541f9b5963922464e01a2.jpeg",
+    "media/bdfcf67416684ca7bcac24c8246172d5.jpeg",
+    "media/bf32fef6bf1742b0b601f8a40b395fa7.jpeg",
+    "media/bf699f67edab4e789501795118b589af.jpeg",
+    "media/bf7198da3be24ccb8ce500010f13aafe.jpg",
+    "media/c324f8d2e6a74f4eb352f400df86336e.PNG",
+    "media/c391ac925ba840749a8b1cec34745861.jpeg",
+    "media/c3b1e34536a0464987b71b1946262f78.jpeg",
+    "media/c437e8f2a2e54a8cbd49fd4cabb49aac.jpeg",
+    "media/c4bc66015b234a3d8ff0ac425b7220e5.jpeg",
+    "media/c622a8f5207d43b79b74e31a5c667d49.jpg",
+    "media/c64a5739be814a459e4325d56890da85.jpeg",
+    "media/c700041398ac4d9682844b972d8390d1.jpeg",
+    "media/c76c4b95530245238a563166352734bc.jpeg",
+    "media/c87bf2198aeb4932ac28f78f6cf8a006.jpeg",
+    "media/c882f1c7e8be4a168cbe6b951786677d.jpeg",
+    "media/c8c5890db79c43888dc8b65da3c29856.jpeg",
+    "media/c8de2f8517e044c4b7124734a3b01598.jpeg",
+    "media/ca9388c473da420785e96c6444019ec2.jpeg",
+    "media/cabff84db60f4206a24f237cae10f53c.jpg",
+    "media/cb8dd014d2874e788a2bae03f91ae8bb.jpeg",
+    "media/cd796b559d1d43e09df52f9b83419dac.jpeg",
+    "media/ce2a2bf00b2d49d98c17b0c13bf04265.jpeg",
+    "media/ce7e0a5f9cc94a3787e1f1db6971fde3.jpeg",
+    "media/ce952b2a8d944ceeb9e4a79a4260e337.JPG",
+    "media/cf1d1f07758940fead4edd398f52474d.jpeg",
+    "media/cf957702a6ac4b8bbaa897e0563a5d9d.jpeg",
+    "media/cf9aeba9eaed40d1a8f6572fe5581804.jpeg",
+    "media/d2c66fb6b3164214a6deb71c135ecd30.jpg",
+    "media/d35c68977aa94e31bc8f4a7f8488be40.jpeg",
+    "media/d3fe8a1f1f6044ad8fe3a2fa11297b12.jpeg",
+    "media/d552c8a0aa1e45b5b1b2a9299e3fcbc9.jpeg",
+    "media/d566f7a450cb4e5aa7b7bced3f909dbd.jpeg",
+    "media/d56dff424a924e329da2723c7ce63bae.jpeg",
+    "media/d5f05791252242488d4c859e52abd8a0.jpeg",
+    "media/d5fb28667ff64716a813c504dbddf9c3.jpeg",
+    "media/d69c0417d0124d478a97217891503cb3.jpeg",
+    "media/d772b32d435c43a2b7408e945e90abb1.jpeg",
+    "media/d887ab30b7f5447591f32e214fb812bd.jpeg",
+    "media/d9222a858f874917b68a57e4db3e9e57.jpeg",
+    "media/d9fb71b7e88f41b4a4ddfd431385cbaa.jpeg",
+    "media/da3282e17b0342f0b064d1858f1844ae.jpeg",
+    "media/db05a506d98a4e47907c82d0060cccd1.jpeg",
+    "media/db81e60b30844fc18551b8a695a5ee59.jpeg",
+    "media/db8a63d52ddc42368ae2de24e76d6a89.jpeg",
+    "media/dc2096d0d111431fa5e50c93725b0f6e.jpeg",
+    "media/dc50752c55294c9a9d251a6374d418f1.jpeg",
+    "media/dd0860522282424aa4ce2b37ae84ff83.jpeg",
+    "media/dd46fb1c3dfa4e6185cab3a247e901e2.jpeg",
+    "media/de47bc3c1e734e0595e64dfa8d45f49c.jpeg",
+    "media/de53e85aac9a41aeb59e3a12b5d032d1.jpeg",
+    "media/dea2494300f54dcba1cb223ad812202f.jpeg",
+    "media/dfafc36b1c0148cd8ef061a6e956dbd5.jpeg",
+    "media/dfb286290bdd4656b6e8164d761676a7.jpeg",
+    "media/e02010989c9e46a4a6ab4789b8f3bdc0.jpeg",
+    "media/e06d1533966c4e3093f2c23117eb73e9.jpeg",
+    "media/e0710c51ea8a45cb90230be8c2049068.jpeg",
+    "media/e0942db434f14e9987c6df41668da098.jpeg",
+    "media/e15278dfdcd842bc8b9b3514ec3948d8.jpeg",
+    "media/e1f33820ac4846c4ba2c3e8ffce8d202.jpeg",
+    "media/e317fb895171425ca02a464e45976e7e.jpeg",
+    "media/e3d463d2978d4cd9928f22408c9e082f.jpeg",
+    "media/e5867ad51e434e59ba73a8ee643cd1d0.jpeg",
+    "media/e5e8f83c05d148568ff5a3907cff3459.jpeg",
+    "media/e616752317104fa6a14c7df178386880.jpeg",
+    "media/e6632758be5d4a59b6ab0d9cd610f358.jpeg",
+    "media/e69a9f2908954109887bf2f05da4cb27.jpeg",
+    "media/e716e537b32b48db978e3f04c839cab3.jpeg",
+    "media/e94219e9f4d640d598faa4a6c6509577.jpeg",
+    "media/ebc54fcecf3e4c3caea547988118dee5.jpeg",
+    "media/ec749d742133438e9604cc06b3fe7630.jpeg",
+    "media/ed71b3a72ed14f06ab072cc8818efa31.jpeg",
+    "media/eeb2ea4383e44805a77c54345e9e5966.jpeg",
+    "media/ef5c8c0bd0f04e74af200c6b0896bc42.jpeg",
+    "media/efbdbfe058aa40efab3ab1e37f87ac16.jpg",
+    "media/f08d0ff71e2b41f4800cbc6a047b4e24.jpeg",
+    "media/f0a961bda0214c3597cf0fde150bc239.jpeg",
+    "media/f1f8bcd1dc6a43d4a07f33463dd6f739.jpeg",
+    "media/f4af54d6813242dd91a8a7225c641965.jpeg",
+    "media/f4c79b5d0c6a4e9da993adb785d3d3ab.jpeg",
+    "media/f4ebd7e18c98485f9a264261f2158f52.jpeg",
+    "media/f4ed0610fe494c07832c59ac8b862052.jpeg",
+    "media/f6a6718070e14f719d0b3b1c49f512c0.jpeg",
+    "media/f9adad7ed35a4cd6a01958814c3bdb22.jpeg",
+    "media/fa2b06081c1649518a6a33444f240d3e.jpeg",
+    "media/fa8adc82273645928403268fee725469.jpeg",
+    "media/fb2a2c2a169c4c10bbb44bd10789cd0b.jpeg",
+    "media/fc54b8b114ce40fda3a0989b27cdfb0e.jpeg",
+    "media/fca063ee17f04e6f89c36223500247ec.jpeg",
+    "media/fd486aa4a3e34a05b93ee95be324582e.JPEG",
+    "media/ff71afaf27ba4bc68444be287668d465.jpeg",
+  ];
+
+  let photos = [];
+  let currentFilter = 'toate';
+  let blobUrls = [];
+  let editingId = null;
+  const DEFAULT_YEAR = '12';
+
+  function revokeAll() {
+    blobUrls.forEach(u => URL.revokeObjectURL(u));
+    blobUrls = [];
+  }
+
+  function addPhoto(src, caption, year, id = null, isStatic = true) {
+    photos.push({
+      id: (id !== null && id !== undefined) ? String(id) : String(Date.now() + Math.random()),
+      src, caption, year: String(year || DEFAULT_YEAR), isStatic
+    });
+  }
+
+  function deletePhoto(id) {
+    photos = photos.filter(p => String(p.id) !== String(id));
+    render();
+  }
+
+  function extractYearFromPath(path) {
+    const lower = (path || '').toLowerCase();
+    if (lower.includes('clasa9')  || lower.includes('/9/'))  return '9';
+    if (lower.includes('clasa10') || lower.includes('/10/')) return '10';
+    if (lower.includes('clasa11') || lower.includes('/11/')) return '11';
+    if (lower.includes('clasa12') || lower.includes('/12/')) return '12';
+    return DEFAULT_YEAR;
+  }
+
+  // ---------- INCARCARE DIN LISTA INCLUSA ----------
+  function loadFromList() {
+    const statusDiv = document.getElementById('loadStatus');
+    statusDiv.style.display = 'block';
+    statusDiv.className = 'status-msg';
+
+    photos = [];
+    for (const path of PHOTO_FILES) {
+      if (!path) continue;
+      addPhoto(path, '', extractYearFromPath(path), null, true);
+    }
+
+    if (photos.length === 0) {
+      statusDiv.innerHTML = '📂 Lista de poze e goala. Adauga fisiere in media/ si in lista PHOTO_FILES din index.html.';
+      statusDiv.classList.add('error');
+    } else {
+      statusDiv.innerHTML = '✅ ' + photos.length + ' amintiri incarcate.';
+      statusDiv.classList.add('success');
+      setTimeout(() => { statusDiv.style.display = 'none'; }, 2500);
+    }
+    render();
+  }
+
+  // ---------- UPLOAD INDIVIDUAL (optional, ramane functional) ----------
+  function handleIndividual(files) {
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      const url = URL.createObjectURL(file);
+      blobUrls.push(url);
+      const newId = String(Date.now() + Math.random());
+      addPhoto(url, '', DEFAULT_YEAR, newId, false);
+      render();
+      setTimeout(() => openModal(newId), 50);
+    });
+  }
+
+  // ---------- FILTRU PE ANI ----------
+  function filterYear(y) {
+    currentFilter = y;
+    document.querySelectorAll('.year-pill').forEach(p =>
+      p.classList.toggle('active', p.dataset.year === y));
+    render();
+  }
+
+  // ---------- RANDARE ----------
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"]/g, m =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[m]));
+  }
+
+  function render() {
+    const show = currentFilter === 'toate'
+      ? photos
+      : photos.filter(p => p.year === currentFilter);
+    const grid = document.getElementById('gallery-grid');
+    const emptyState = document.getElementById('empty-state');
+
+    grid.innerHTML = '';
+    emptyState.style.display = show.length === 0 ? 'block' : 'none';
+    document.getElementById('filter-row').style.display       = photos.length > 0 ? 'flex'  : 'none';
+    document.getElementById('stats-row').style.display        = photos.length > 0 ? 'flex'  : 'none';
+    document.getElementById('filmstrip-section').style.display = photos.length >= 4 ? 'block' : 'none';
+    document.getElementById('footer-section').style.display   = photos.length > 0 ? 'block' : 'none';
+    document.getElementById('stat-total').innerText = photos.length;
+
+    show.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'photo-item';
+      div.innerHTML = `
+        <img src="${escapeHtml(p.src)}" alt="amintire" loading="lazy">
+        <div class="photo-overlay">
+          ${p.caption ? `<div class="photo-caption-display">${escapeHtml(p.caption)}</div>` : ''}
+          <div class="photo-year-tag">Clasa a ${escapeHtml(p.year)}-a</div>
+        </div>
+        <div class="photo-actions">
+          <button class="action-btn" onclick="openModal('${escapeHtml(p.id)}')">✏️</button>
+          <button class="action-btn" onclick="deletePhoto('${escapeHtml(p.id)}')">✕</button>
+        </div>`;
+      grid.appendChild(div);
+    });
+    renderFilmstrip();
+  }
+
+  function renderFilmstrip() {
+    const track = document.getElementById('filmstrip-track');
+    if (photos.length < 4) { track.innerHTML = ''; return; }
+    const sample = photos.slice(0, 20);
+    const doubled = [...sample, ...sample];
+    track.innerHTML = doubled
+      .map(p => `<img class="film-thumb" src="${escapeHtml(p.src)}" alt="" loading="lazy">`)
+      .join('');
+  }
+
+  // ---------- MODAL EDITARE ----------
+  function openModal(id) {
+    const p = photos.find(x => String(x.id) === String(id));
+    if (!p) return;
+    editingId = String(id);
+    document.getElementById('modal-img').src = p.src;
+    document.getElementById('modal-caption').value = p.caption || '';
+    document.getElementById('modal-year').value = p.year || DEFAULT_YEAR;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    editingId = null;
+  }
+
+  function saveCaption() {
+    if (editingId === null) return;
+    const p = photos.find(x => String(x.id) === String(editingId));
+    if (p) {
+      p.caption = document.getElementById('modal-caption').value.trim();
+      p.year = document.getElementById('modal-year').value;
+    }
+    closeModal();
+    render();
+  }
+
+  // ---------- EXPORT / SHARE ----------
+  function printMemories() { window.print(); }
+
+  function copyAll() {
+    const url = window.location.href;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(
+        () => alert('Link copiat in clipboard!'),
+        () => prompt('Copiaza linkul:', url)
+      );
+    } else {
+      prompt('Copiaza linkul:', url);
+    }
+  }
+
+  // ---------- INIT ----------
+  document.addEventListener('DOMContentLoaded', () => {
+    const fileInput = document.getElementById('file-input');
+    const dropZone  = document.getElementById('drop-zone');
+    fileInput.addEventListener('change', e => handleIndividual(e.target.files));
+    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      handleIndividual(e.dataTransfer.files);
+    });
+
+    document.getElementById('modal').addEventListener('click', e => {
+      if (e.target.id === 'modal') closeModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    loadFromList();
+  });
+</script>
+</body>
+</html>
