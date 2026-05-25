@@ -35,6 +35,9 @@
   .upload-icon { width: 56px; height: 56px; border-radius: 50%; background: rgba(201, 169, 110, 0.1); border: 1px solid rgba(201, 169, 110, 0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 22px; }
   #file-input { display: none; }
   .gallery-section { padding: 2rem; max-width: 1100px; margin: 0 auto; }
+  .qr-row { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0 0.5rem; }
+  .qr-item { background: var(--cream); padding: 16px; border-radius: 20px; border: 1px solid rgba(201,169,110,0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+  .qr-img { display: block; width: 220px; height: 220px; max-width: 40vw; }
   .gallery-grid { columns: 3; column-gap: 16px; }
   @media (max-width: 700px) { .gallery-grid { columns: 2; } }
   @media (max-width: 400px) { .gallery-grid { columns: 1; } }
@@ -96,20 +99,15 @@
   <p class="section-label">Povestea ta în imagini</p>
   <h2 class="section-title">Albumul din arhivă</h2>
 
-  <div class="folder-loader" id="autoLoader">
-    <div class="auto-badge">📀 ÎNCĂRCARE AUTOMATĂ DIN media/</div>
-    <p class="folder-hint" id="autoHint">Toate pozele din folderul <strong style="color:var(--gold)">media/</strong> se încarcă automat.</p>
-    <div id="loadStatus" class="status-msg" style="display:none;"></div>
+  <div class="qr-row">
+    <div class="qr-item">
+      <img src="qr1.png" alt="Cod QR 1" class="qr-img">
+    </div>
+    <div class="qr-item">
+      <img src="qr2.png" alt="Cod QR 2" class="qr-img">
+    </div>
   </div>
-  
-  <div class="separator">—— sau adaugă poze individual ——</div>
-
-  <div class="upload-area" id="drop-zone" onclick="document.getElementById('file-input').click()">
-    <div class="upload-icon">📷</div>
-    <p><strong>Apasă sau trage poze individuale</strong><br>JPG, PNG — completează legenda mai târziu</p>
-    <input type="file" id="file-input" accept="image/*" multiple>
-  </div>
-
+  <div id="loadStatus" class="status-msg" style="display:none;"></div>
 
 </section>
 
@@ -653,16 +651,20 @@
 
   // ---------- INIT ----------
   document.addEventListener('DOMContentLoaded', () => {
+    // zona de upload individual a fost inlocuita cu coduri QR;
+    // pastram codul defensiv in caz ca elementele nu exista.
     const fileInput = document.getElementById('file-input');
     const dropZone  = document.getElementById('drop-zone');
-    fileInput.addEventListener('change', e => handleIndividual(e.target.files));
-    dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-    dropZone.addEventListener('drop', e => {
-      e.preventDefault();
-      dropZone.classList.remove('drag-over');
-      handleIndividual(e.dataTransfer.files);
-    });
+    if (fileInput && dropZone) {
+      fileInput.addEventListener('change', e => handleIndividual(e.target.files));
+      dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+      dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        handleIndividual(e.dataTransfer.files);
+      });
+    }
 
     document.getElementById('modal').addEventListener('click', e => {
       if (e.target.id === 'modal') closeModal();
