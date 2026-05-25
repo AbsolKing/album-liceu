@@ -44,14 +44,6 @@
   .photo-item { break-inside: avoid; margin-bottom: 16px; border-radius: 12px; overflow: hidden; position: relative; }
   .photo-item img { width: 100%; display: block; transition: transform 0.3s ease; filter: sepia(0.1) contrast(1.02); }
   .photo-item:hover img { transform: scale(1.02); }
-  .photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(15,10,5,0.85) 0%, transparent 50%); opacity: 0; transition: opacity 0.2s; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; }
-  .photo-item:hover .photo-overlay { opacity: 1; }
-  .photo-caption-display { font-size: 13px; color: var(--cream); font-style: italic; font-family: 'Playfair Display', serif; margin-bottom: 6px; }
-  .photo-year-tag { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
-  .photo-actions { display: flex; gap: 6px; position: absolute; top: 10px; right: 10px; opacity: 0; }
-  .photo-item:hover .photo-actions { opacity: 1; }
-  .action-btn { width: 30px; height: 30px; border-radius: 50%; background: rgba(15,10,5,0.7); border: 1px solid rgba(201,169,110,0.4); color: var(--cream); cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; }
-  .action-btn:hover { background: var(--accent); }
   .stats-row { display: flex; justify-content: center; gap: 3rem; padding: 2rem 0; border-top: 1px solid rgba(201,169,110,0.1); border-bottom: 1px solid rgba(201,169,110,0.1); margin: 2rem auto; max-width: 600px; }
   .stat { text-align: center; }
   .stat-num { font-family: 'Playfair Display', serif; font-size: 2.5rem; color: var(--gold); display: block; line-height: 1; }
@@ -69,15 +61,6 @@
   .btn-print, .btn-share { padding: 8px 24px; border-radius: 40px; font-size: 13px; cursor: pointer; transition: 0.2s; }
   .btn-print { background: var(--gold); border: none; color: var(--dark); font-weight: 500; }
   .btn-share { background: transparent; border: 1px solid rgba(201,169,110,0.4); color: var(--gold-light); }
-  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(10,7,4,0.9); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-  .modal-bg.open { display: flex; }
-  .modal { background: #1e160f; border: 1px solid rgba(201,169,110,0.3); border-radius: 24px; padding: 2rem; max-width: 480px; width: 90%; }
-  .modal h3 { font-family: 'Playfair Display', serif; color: var(--cream); margin-bottom: 0.5rem; }
-  .modal-img { width: 100%; max-height: 180px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; }
-  .modal input, .modal select { width: 100%; background: rgba(249,244,236,0.05); border: 1px solid rgba(201,169,110,0.3); border-radius: 12px; padding: 10px 14px; color: var(--cream); margin-bottom: 12px; font-family: inherit; }
-  .modal-btns { display: flex; gap: 12px; margin-top: 1rem; }
-  .btn-save { flex:1; background: var(--gold); border: none; border-radius: 30px; padding: 10px; font-weight: 500; color: var(--dark); cursor: pointer; }
-  .btn-cancel { background: transparent; border: 1px solid var(--warm); border-radius: 30px; padding: 10px 20px; color: var(--warm); cursor: pointer; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes pulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
   @keyframes scroll-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -135,18 +118,6 @@
   </div>
 </footer>
 
-<div class="modal-bg" id="modal">
-  <div class="modal">
-    <h3>Editează amintirea</h3>
-    <img id="modal-img" class="modal-img">
-    <input type="text" id="modal-caption" placeholder="Legendă (ex: Festivitate de absolvire)">
-    <select id="modal-year">
-      <option value="9">Clasa a 9-a</option><option value="10">Clasa a 10-a</option>
-      <option value="11">Clasa a 11-a</option><option value="12" selected>Clasa a 12-a</option>
-    </select>
-    <div class="modal-btns"><button class="btn-save" onclick="saveCaption()">Salvează</button><button class="btn-cancel" onclick="closeModal()">Anulează</button></div>
-  </div>
-</div>
 
 <script>
   // ============================================================
@@ -496,7 +467,6 @@
 
   let photos = [];
   let blobUrls = [];
-  let editingId = null;
   const DEFAULT_YEAR = '12';
 
   function revokeAll() {
@@ -509,11 +479,6 @@
       id: (id !== null && id !== undefined) ? String(id) : String(Date.now() + Math.random()),
       src, caption, year: String(year || DEFAULT_YEAR), isStatic
     });
-  }
-
-  function deletePhoto(id) {
-    photos = photos.filter(p => String(p.id) !== String(id));
-    render();
   }
 
   function extractYearFromPath(path) {
@@ -557,7 +522,6 @@
       const newId = String(Date.now() + Math.random());
       addPhoto(url, '', DEFAULT_YEAR, newId, false);
       render();
-      setTimeout(() => openModal(newId), 50);
     });
   }
 
@@ -582,16 +546,7 @@
     show.forEach(p => {
       const div = document.createElement('div');
       div.className = 'photo-item';
-      div.innerHTML = `
-        <img src="${escapeHtml(p.src)}" alt="amintire" loading="lazy">
-        <div class="photo-overlay">
-          ${p.caption ? `<div class="photo-caption-display">${escapeHtml(p.caption)}</div>` : ''}
-          <div class="photo-year-tag">Clasa a ${escapeHtml(p.year)}-a</div>
-        </div>
-        <div class="photo-actions">
-          <button class="action-btn" onclick="openModal('${escapeHtml(p.id)}')">✏️</button>
-          <button class="action-btn" onclick="deletePhoto('${escapeHtml(p.id)}')">✕</button>
-        </div>`;
+      div.innerHTML = `<img src="${escapeHtml(p.src)}" alt="amintire" loading="lazy">`;
       grid.appendChild(div);
     });
     renderFilmstrip();
@@ -605,33 +560,6 @@
     track.innerHTML = doubled
       .map(p => `<img class="film-thumb" src="${escapeHtml(p.src)}" alt="" loading="lazy">`)
       .join('');
-  }
-
-  // ---------- MODAL EDITARE ----------
-  function openModal(id) {
-    const p = photos.find(x => String(x.id) === String(id));
-    if (!p) return;
-    editingId = String(id);
-    document.getElementById('modal-img').src = p.src;
-    document.getElementById('modal-caption').value = p.caption || '';
-    document.getElementById('modal-year').value = p.year || DEFAULT_YEAR;
-    document.getElementById('modal').classList.add('open');
-  }
-
-  function closeModal() {
-    document.getElementById('modal').classList.remove('open');
-    editingId = null;
-  }
-
-  function saveCaption() {
-    if (editingId === null) return;
-    const p = photos.find(x => String(x.id) === String(editingId));
-    if (p) {
-      p.caption = document.getElementById('modal-caption').value.trim();
-      p.year = document.getElementById('modal-year').value;
-    }
-    closeModal();
-    render();
   }
 
   // ---------- EXPORT / SHARE ----------
@@ -665,13 +593,6 @@
         handleIndividual(e.dataTransfer.files);
       });
     }
-
-    document.getElementById('modal').addEventListener('click', e => {
-      if (e.target.id === 'modal') closeModal();
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeModal();
-    });
 
     loadFromList();
   });
